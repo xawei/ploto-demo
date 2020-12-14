@@ -1,0 +1,38 @@
+apiVersion: "ploto.io/v1alpha1"
+kind: DynamicExecutorPool
+metadata:
+  name: dep-simple-logger
+  namespace: ploto-demo
+spec:
+  initialExecutor: 2
+  maxExecutor: 5
+  minExecutor: 2
+  webhook:
+    service:
+      namespace: ploto-system
+      name: autoscaler-webhook-service
+      path: /scale
+      port: 8000
+  container:
+    command:
+      - /app/bin/simple-logger
+    args:
+      - "--simulate-exe-time=60"
+    env:
+      - name: PATH
+        value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    image: ccr.ccs.tencentyun.com/ploto/simple-logger:1.0
+    imagePullPolicy: Always
+    name: simple-logger
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    securityContext:
+      privileged: false
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    workingDir: /

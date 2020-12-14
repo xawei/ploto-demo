@@ -1,0 +1,64 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ploto-controller-rbac
+rules:
+  - apiGroups: ["*"] # "" indicates the core API group
+    resources: ["*"] 
+    verbs: ["*"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ploto-controller-rbac
+  namespace: ploto-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ploto-controller-rbac
+subjects:
+  - kind: ServiceAccount
+    name: ploto-controller-rbac
+    namespace: ploto-system
+roleRef:
+  kind: ClusterRole
+  name: ploto-controller-rbac
+  apiGroup: rbac.authorization.k8s.io
+---
+# Deploy a pod to run the ploto-controller
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ploto-controller
+  namespace: ploto-system
+  labels:
+    app: ploto-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ploto-controller
+  template:
+    metadata:
+      labels:
+        app: ploto-controller
+    spec:
+      serviceAccountName: ploto-controller-rbac
+      containers:
+        - name: ploto-controller
+          command:
+            - /app/bin/ploto-controller
+          args:
+            - -v=5
+            - --sidecar-image=ccr.ccs.tencentyun.com/ploto/ploto-task-extractor-amd64:v0.0.0-21.6ac522e.dirty
+            - --archive=false
+          image: ccr.ccs.tencentyun.com/ploto/ploto-controller-amd64:v0.0.0-21.6ac522e.dirty
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /health
+              port: 9200
+            initialDelaySeconds: 3
+            periodSeconds: 5

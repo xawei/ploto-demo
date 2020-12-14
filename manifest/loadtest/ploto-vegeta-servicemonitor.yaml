@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ploto-vegeta
+  labels:
+    ploto.io/app: ploto-vegeta
+spec:
+  selector:
+    matchLabels:
+      ploto.io/app: ploto-vegeta
+  namespaceSelector:
+    matchNames:
+      - ploto-system
+  endpoints:
+  - port: metrics

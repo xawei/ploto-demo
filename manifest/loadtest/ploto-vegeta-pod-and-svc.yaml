@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    ploto.io/app: ploto-vegeta
+  name: ploto-vegeta-service
+  namespace: ploto-system
+spec:
+  ports:
+  - name: metrics
+    port: 8880
+    protocol: TCP
+    targetPort: metrics
+  selector:
+    ploto.io/app: ploto-vegeta
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ploto-vegeta-load-test
+  labels:
+    ploto.io/app: ploto-vegeta
+  namespace: ploto-system
+spec:
+  containers:
+  - args:
+    - --apiserver-addr=https://kubernetes.default
+    - --ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    - --token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+    - --duration=1200
+    - --task-para-len=1
+    - --mul-qps=false
+    - --qps-gap=1
+    - --min-qps=1
+    command:
+    - /app/bin/ploto-vegeta
+    image: ccr.ccs.tencentyun.com/ploto/ploto-vegeta-amd64:v0.0.0-21.6ac522e.dirty
+    imagePullPolicy: Always
+    name: ploto-vegeta
+    ports:
+      - containerPort: 8880
+        name: metrics
+        protocol: TCP
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+  dnsPolicy: ClusterFirst
+  restartPolicy: OnFailure
+  serviceAccount: ploto-controller-rbac
+  serviceAccountName: ploto-controller-rbac
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300

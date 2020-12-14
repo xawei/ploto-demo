@@ -1,0 +1,9 @@
+apiVersion: "ploto.io/v1alpha1"
+kind: Task
+metadata:
+  name: task1
+  namespace: ploto-demo
+spec:
+  executorPool: dep-simple-logger
+  executorPoolType: Dynamic
+  para: https://ploto.io/tasks/1.html

@@ -1,0 +1,94 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: (unknown)
+  creationTimestamp: null
+  name: tasks.ploto.io
+spec:
+  group: ploto.io
+  names:
+    categories:
+    - ploto
+    kind: Task
+    listKind: TaskList
+    plural: tasks
+    shortNames:
+    - task
+    singular: task
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.executorPool
+      name: ExecutorPool
+      type: string
+    - jsonPath: .spec.executorPoolType
+      name: ExecutorPoolType
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .status.executorPodName
+      name: ExecutingPod
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              executorPool:
+                minLength: 1
+                type: string
+              executorPoolType:
+                enum:
+                - Fixed
+                - Dynamic
+                type: string
+              para:
+                default: ""
+                type: string
+            required:
+            - executorPool
+            - executorPoolType
+            type: object
+          status:
+            properties:
+              executorPodName:
+                type: string
+              finishedAt:
+                format: date-time
+                type: string
+              phase:
+                type: string
+              startedAt:
+                format: date-time
+                type: string
+            required:
+            - executorPodName
+            type: object
+        required:
+        - metadata
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
