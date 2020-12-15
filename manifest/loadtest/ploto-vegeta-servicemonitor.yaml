@@ -3,6 +3,7 @@ kind: ServiceMonitor
 metadata:
   name: ploto-vegeta
   labels:
+    prometheus: kube-prometheus
     ploto.io/app: ploto-vegeta
 spec:
   selector:
