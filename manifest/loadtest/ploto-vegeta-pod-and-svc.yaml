@@ -37,7 +37,7 @@ spec:
     - --min-freq=1
     command:
     - /app/bin/ploto-vegeta
-    image: ccr.ccs.tencentyun.com/ploto/ploto-vegeta-amd64:v0.0.0-21.6ac522e.dirty
+    image: ccr.ccs.tencentyun.com/ploto/ploto-vegeta-amd64:v0.1.0
     imagePullPolicy: Always
     name: ploto-vegeta
     ports:

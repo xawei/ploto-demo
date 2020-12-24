@@ -51,9 +51,9 @@ spec:
             - /app/bin/ploto-controller
           args:
             - -v=5
-            - --sidecar-image=ccr.ccs.tencentyun.com/ploto/ploto-task-extractor-amd64:v0.0.0-21.6ac522e.dirty
+            - --sidecar-image=ccr.ccs.tencentyun.com/ploto/ploto-task-extractor-amd64:v0.1.0
             - --archive=false
-          image: ccr.ccs.tencentyun.com/ploto/ploto-controller-amd64:v0.0.0-21.6ac522e.dirty
+          image: ccr.ccs.tencentyun.com/ploto/ploto-controller-amd64:v0.1.0
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
