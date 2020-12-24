@@ -32,9 +32,9 @@ spec:
     - --token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
     - --duration=1200
     - --task-para-len=1
-    - --mul-qps=false
-    - --qps-gap=1
-    - --min-qps=1
+    - --mul-freq=false
+    - --freq-gap=1
+    - --min-freq=1
     command:
     - /app/bin/ploto-vegeta
     image: ccr.ccs.tencentyun.com/ploto/ploto-vegeta-amd64:v0.0.0-21.6ac522e.dirty

@@ -90,8 +90,8 @@ spec:
     - --token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
     - --duration=1200 # 压测持续的时间。
     - --task-para-len=1 # 压测创建的task中para的字符串长度
-    - --mul-qps=false # 是否测试多种不同客户端的并发请求
-    - --min-qps=1 # 如果非多种不同的qps，则默认取这个min-qps的值
+    - --mul-freq=false # 是否测试多种不同客户端的并发请求
+    - --min-freq=1 # 如果非多种不同的freq，则默认取这个min-freq的值
 ...
 ```
 
