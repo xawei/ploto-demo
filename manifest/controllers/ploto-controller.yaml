@@ -33,16 +33,16 @@ metadata:
   name: ploto-controller
   namespace: ploto-system
   labels:
-    app: ploto-controller
+    ploto.io/app: ploto-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ploto-controller
+      ploto.io/app: ploto-controller
   template:
     metadata:
       labels:
-        app: ploto-controller
+        ploto.io/app: ploto-controller
     spec:
       serviceAccountName: ploto-controller-rbac
       containers:

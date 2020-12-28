@@ -1,124 +1,207 @@
-# Ploto性能压测方案
-
 [TOC]
 
-## 1. 前期准备
+# 快速开始
+
+## 目标
+
+- 在kubernetes集群中部署Ploto任务调度与执行框架
+- 创建Task, DynamicExecutorPool自定义资源定义（Custom Resource Definition）
+- 创建一系列的Task实例，和一个示例DynamicExecutorPool，然后ploto-controller会把这些task分配给DynamicExecutorPool管理的裸pod，pod中的应用容器消费任务（本例为打印task中的para）
+
+## 前提条件
 
 - 可用的kubernetes集群，建议版本>=1.16.3
-- 在集群上部署好Ploto（参考步骤1~4：https://github.com/xawei/ploto-demo）
 
+## 步骤
 
+### 1. 下载ploto-demo项目
 
-## 2. 部署Prometheus和Grafana
-
-（1）使用kube-prometheus快速部署
-
-https://github.com/prometheus-operator/kube-prometheus
-
-```shell 
-git clone https://github.com/prometheus-operator/kube-prometheus.git
-cd kube-prometheus
-
-# Create the namespace and CRDs, and then wait for them to be availble before creating the remaining resources
-kubectl create -f manifests/setup
-until kubectl get servicemonitors --all-namespaces ; do date; sleep 1; echo ""; done
-kubectl create -f manifests/
-```
-
-（2）访问grafana
-
-```
-kubectl --namespace monitoring port-forward svc/grafana 3000 --address 0.0.0.0 &
-```
-
-初始用户名/密码是admin/admin
-
-（如果是使用TKE独立集群，请注意master/worker节点的安全组设置。或建议使用公网service）
-
-
-
-可以查看prometheus的配置：
+ploto-demo中保存了本示例所需的yaml文件
 
 ```shell
-kubectl -n monitoring get secret prometheus-k8s -ojson | jq -r '.data["prometheus.yaml.gz"]' | base64 -d | gunzip
-```
-
-
-
-## 3. 配置ploto-vegeta为prometheus的target
-
-下载ploto-demo的manifest文件
-
-```
 git clone https://github.com/xawei/ploto-demo.git
+cd ploto-demo
 ```
 
-配置ploto-vegeta为prometheus的target
-
-```
-# 创建servicemonitor，使prometheus采集ploto-vegeta的metrics数据
-kubectl apply -f manifest/loadtest/ploto-vegeta-servicemonitor.yaml
-```
-
-修改serviceAccount prometheus-k8s 对应的clusterRole prometheus-k8s权限，使其可以操作ploto-system下的资源：
-
-原ClusterRole prometheus-k8s的配置如下：
-
-![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201214233227.png)
-
-修改为：
-
-![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201215101621.png)
 
 
+### 2. 创建CRD和新建命名空间
 
-启动ploto-vegeta
-
-```
-kubectl apply -f manifest/loadtest/ploto-vegeta-pod-and-svc.yaml
+```shell
+kubectl apply -f manifest/crds/ploto.io_dynamicexecutorpools.yaml
+kubectl apply -f manifest/crds/ploto.io_fixedexecutorpools.yaml
+kubectl apply -f manifest/crds/ploto.io_tasks.yaml
+kubectl create ns ploto-system
+kubectl create ns ploto-demo
 ```
 
-相关重要启动参数解析如下，可以修改yaml自定义启动参数：
+查看CRD：
 
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201130163857.png)
+
+
+
+### 3. 创建默认资源池扩缩容算法的Webhook
+
+```shell
+kubectl apply -f manifest/webhook/autoscaler-webhook-service.yaml
 ```
-...
+
+
+
+### 4. 创建Ploto Controller
+
+```shell
+kubectl apply -f manifest/controllers/ploto-controller.yaml
+```
+
+查看ns ploto-system下的资源：
+
+```shell
+kubectl get all -n ploto-system
+```
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201130164726.png)
+
+至此，我们已经完成了在kubernetes至少上部署了Ploto框架所必须的预备资源。下面再继续创建与业务相关的Task和DynamicExecutorPool自定义资源。
+
+
+
+### 5. 创建自定义的Dynamic Executor Pool
+
+准备创建一个DynamicExecutorPool，先查看一下我们定义的dep1.yaml：
+
+```shell
+cat manifest/deps/dep-simple-logger.yaml
+```
+
+```yaml
+# manifest/deps/dep-simple-logger.yaml
+apiVersion: "ploto.io/v1alpha1"
+kind: DynamicExecutorPool
+metadata:
+  name: dep-simple-logger
+  namespce: ploto-demo
 spec:
-  containers:
-  - args:
-    - --apiserver-addr=https://kubernetes.default
-    - --ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    - --token-file=/var/run/secrets/kubernetes.io/serviceaccount/token
-    - --duration=1200 # 压测持续的时间。
-    - --task-para-len=1 # 压测创建的task中para的字符串长度
-    - --mul-freq=false # 是否测试多种不同客户端的并发请求
-    - --min-freq=1 # 如果非多种不同的freq，则默认取这个min-freq的值
-...
+  initialExecutor: 2 # executor资源池的初始pod（执行器）数量
+  maxExecutor: 5 # executor资源池的最大pod（执行器）数量
+  minExecutor: 2 # executor资源池的最小pod（执行器）数量
+  # 动态扩缩容的webhook，可选，默认预估下一周所需executor pod数量为
+  # 本周期在执行任务的executor pod数量的1.3倍
+  webhook: 
+    service:
+      namespace: ploto-system
+      name: autoscaler-webhook-service
+      path: /scale
+      port: 8000
+  container: # 应用容器，消费task中的para信息
+    command:
+      - /app/bin/simple-logger
+    args:
+      - "--simulate-exe-time=60" # 应用容器可指定模拟任务执行的耗时，再打印task信息
+    env:
+      - name: PATH
+        value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    image: ccr.ccs.tencentyun.com/ploto/simple-logger:1.0
+    imagePullPolicy: Always
+    name: simple-logger
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    securityContext:
+      privileged: false
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    workingDir: /
 ```
 
-查看采集的数据，例子如下：
+其中定义的container是我们的应用容器，持续监听本地任务文件，一旦任务文件存在，则会去读Task.Spec.Para中的数据，执行任务。
 
-![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201215110416.png)
+创建这个dynamic executor pool（简称dep）：
 
-![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201215110436.png)
-
-![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201215110522.png)
-
-例子的snapshop可参见：
-
-https://snapshot.raintank.io/dashboard/snapshot/ZwWu3XiwWhQwiwkBygH9eAeav1dREWKa
-
-
-
-## 4. 查看task消费端统计数据
-
-//todo: 在controller中暴露metrics，统计系统中task的相关统计数据，包括task从创建到开始处理的时间百分位、平均值等。
-
-## 清理kube-prometheus
-
-```
-cd kube-prometheus
-kubectl delete -f manifests/setup
-kubectl delete -f manifests/
+```shell
+kubectl apply -f manifest/deps/dep-simple-logger.yaml
 ```
 
+可以查看目前dep的状态：
+
+```shell
+kubectl get dep -o wide -n ploto-demo
+kubectl get pod -n ploto-demo
+```
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201202220002.png)
+
+dep-simple-logger刚创建时，还没有executor pod，当ploto-controller监听到dep-simple-logger时，则为这个dep创建了2个pod（ initialExecutor: 2）。
+
+
+
+### 6. 创建task，并查看执行情况
+
+manifest/tasks/中准备了6个task，我们查看其中一个task1.yaml，下面附上了注释：
+
+```
+cat manifest/tasks/task1.yaml
+```
+
+```yaml
+apiVersion: "ploto.io/v1alpha1"
+kind: Task
+metadata:
+  name: task1
+spec:
+  executorPool: dep-simple-logger # 指定消费这个task的executor pod所属的资源池
+  executorPoolType: Dynamic # 指定消费这个task的executor pod所属的资源池类型
+  para: https://ploto.io/tasks/1.html # task携带的任务信息
+```
+
+创建这些task：
+
+```shell
+kubectl apply -f manifest/tasks/
+```
+
+如上图所示，6个新创建的task，初始状态为Pending，等待调度关联到对应的executorPool管理的pod，由pod执行消费任务。
+
+```
+kubectl get task -n ploto-demo
+kubectl get pod -n ploto-demo
+```
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201202220221.png)
+
+
+
+task状态为Running后，等待manifest/deps/dep1.yaml中定义的simulate-exe-time启动参数值（单位秒）的时间后，可以看到部分task执行完成了（status: completed）：
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201202220326.png)
+
+查看对应的executor pod，可以看到输出（消费task）：
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201202220655.png)
+
+本例executor pod为简单地监听分配到的task任务，并打印task中的para参数。
+
+ploto-controller会根据task的数量、执行情况，周期性地对dep管理的executor pod资源数量，在[minExecutor, maxExecutor]区间内做动态的扩缩容。默认为每一个周期需要的pod数量为上一周期的1.3倍。你也可以实现自定义的扩缩容webhook，在dep中配置。
+
+等待所有任务执行完后，我们查看dep的状态，以及它所关联的pod。发现pod数量已缩容至dep-simple-loger实例中设置的最小值minExexutor: 2。
+
+![](https://weiblog.oss-cn-beijing.aliyuncs.com/img/20201202220809.png)
+
+
+
+### 附： 清理ploto相关资源
+
+```shell
+kubectl delete -f manifest/crds/
+kubectl delete -f manifest/sa/
+kubectl delete -f manifest/controllers/
+
+kubectl delete ns ploto-system
+kubectl delete ns ploto-demo
+```
 

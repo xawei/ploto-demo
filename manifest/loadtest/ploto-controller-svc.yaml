@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    ploto.io/app: ploto-controller
+  name: ploto-controller-service
+  namespace: ploto-system
+spec:
+  ports:
+    - name: metrics
+      port: 9100
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    ploto.io/app: ploto-controller
+  sessionAffinity: None
+  type: ClusterIP

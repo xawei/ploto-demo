@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ploto-controller
+  labels:
+    prometheus: kube-prometheus
+    ploto.io/app: ploto-controller
+spec:
+  selector:
+    matchLabels:
+      ploto.io/app: ploto-vegeta
+  namespaceSelector:
+    matchNames:
+      - ploto-system
+  endpoints:
+    - port: metrics
+
