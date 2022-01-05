@@ -163,6 +163,7 @@ spec:
 
 ```shell
 kubectl apply -f manifest/tasks/
+kubectl apply -f manifest/tasks/reentrant-task/
 ```
 
 如上图所示，6个新创建的task，初始状态为Pending，等待调度关联到对应的executorPool管理的pod，由pod执行消费任务。
