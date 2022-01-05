@@ -77,7 +77,7 @@ cat manifest/deps/dep-simple-logger.yaml
 
 ```yaml
 # manifest/deps/dep-simple-logger.yaml
-apiVersion: "ploto.io/v1alpha1"
+apiVersion: "ploto.io/v1"
 kind: DynamicExecutorPool
 metadata:
   name: dep-simple-logger
@@ -149,7 +149,7 @@ cat manifest/tasks/task1.yaml
 ```
 
 ```yaml
-apiVersion: "ploto.io/v1alpha1"
+apiVersion: "ploto.io/v1"
 kind: Task
 metadata:
   name: task1
