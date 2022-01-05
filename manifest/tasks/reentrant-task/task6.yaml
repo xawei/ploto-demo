@@ -7,3 +7,4 @@ spec:
   executorPool: dep-simple-logger
   executorPoolType: Dynamic
   para: https://ploto.io/tasks/6.html
+  reentrant: true
