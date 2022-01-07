@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: tasks.ploto.io
 spec:
@@ -45,70 +44,46 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Task is the definition of a task resource.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
-            description: TaskSpec is the specification of a Task.
             properties:
               executorPool:
-                description: ExecutorPool specifies the name of the task executor
-                  pool. Specifying a task executor means that each newly created task
-                  will be executed by matching an idle executor in the pool. If the
-                  specified task executor does not exist, the task will always be
-                  in the pending state.
                 minLength: 1
                 type: string
               executorPoolType:
-                description: ExecutorPoolType specifies the type of the task executor
-                  pool.
                 enum:
                 - Fixed
                 - Dynamic
                 type: string
               para:
                 default: ""
-                description: Para specifies the parameter of this task.
                 type: string
               reentrant:
                 default: false
-                description: Reentrant indicates that whether a task should be rescheduled
-                  and re-executed
                 type: boolean
             required:
             - executorPool
             - executorPoolType
             type: object
           status:
-            description: TaskStatus contains overall status information about a Task.
             properties:
               executorPodName:
-                description: Indicate which executor pod is executing this task
                 type: string
               failedTime:
                 format: int32
                 type: integer
               finishedAt:
-                description: Time at which this workflow completed
                 format: date-time
                 type: string
               phase:
-                description: Phase a simple, high-level summary of where the task
-                  is in its lifecycle.
                 type: string
               startedAt:
-                description: Time at which this workflow started
                 format: date-time
                 type: string
             required:
