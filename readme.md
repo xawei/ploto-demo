@@ -125,6 +125,7 @@ spec:
 
 ```shell
 kubectl apply -f manifest/deps/dep-simple-logger.yaml
+kubectl apply -f manifest/deps/crashtest/dep-crash-test.yaml
 ```
 
 可以查看目前dep的状态：
@@ -142,7 +143,7 @@ dep-simple-logger刚创建时，还没有executor pod，当ploto-controller监�
 
 ### 6. 创建task，并查看执行情况
 
-manifest/tasks/中准备了6个task，我们查看其中一个task1.yaml，下面附上了注释：
+manifest/tasks/中准备了一些task，我们查看其中一个task1.yaml，下面附上了注释：
 
 ```
 cat manifest/tasks/task1.yaml
@@ -164,9 +165,10 @@ spec:
 ```shell
 kubectl apply -f manifest/tasks/
 kubectl apply -f manifest/tasks/reentrant-task/
+kubectl apply -f manifest/tasks/reentrant-crash-task/
 ```
 
-如上图所示，6个新创建的task，初始状态为Pending，等待调度关联到对应的executorPool管理的pod，由pod执行消费任务。
+如上图所示，这些新创建的task，初始状态为Pending，等待调度关联到对应的executorPool管理的pod，由pod执行消费任务。
 
 ```
 kubectl get task -n ploto-demo
