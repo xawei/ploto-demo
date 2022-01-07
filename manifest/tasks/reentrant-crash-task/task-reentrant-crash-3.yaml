@@ -6,5 +6,5 @@ metadata:
 spec:
   executorPool: dep-crash-test
   executorPoolType: Dynamic
-  para: https://ploto.io/tasks/task-reentrant-crash-3.html
+  para: crash
   reentrant: true
