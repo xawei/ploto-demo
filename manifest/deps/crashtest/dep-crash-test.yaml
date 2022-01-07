@@ -15,15 +15,15 @@ spec:
       port: 8000
   container:
     command:
-      - aaaaaaaaaaa
+      - /app/bin/crash-demo
     args:
       - "--simulate-exe-time=60"
     env:
       - name: PATH
         value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    image: nginx
+    image: ccr.ccs.tencentyun.com/ploto/crash-demo:v1.5.3
     imagePullPolicy: Always
-    name: nginx-crash
+    name: crash-demo
     resources:
       limits:
         cpu: 500m
